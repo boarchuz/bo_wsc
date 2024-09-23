@@ -1,0 +1,47 @@
+menu "[BO] WiFi Settings Cache"
+
+    config BO_WSC_ENABLED
+        bool
+        default y
+
+    choice BO_WSC_RTC_MEM
+        prompt "RTC Memory Location"
+        default BO_WSC_RTC_MEM_SLOW
+        help
+            Select which RTC memory block will be used for caching data.
+
+        config BO_WSC_RTC_MEM_SLOW
+            bool "RTC Slow Memory"
+        config BO_WSC_RTC_MEM_FAST
+            bool "RTC Fast Memory"
+            depends on ESP32_WIFI_TASK_PINNED_TO_CORE_0 || ESP_WIFI_TASK_PINNED_TO_CORE_0
+
+    endchoice
+
+    config BO_WSC_NVS_DISABLED
+        bool "Disable NVS Storage"
+        default n
+        help
+            By default, initial settings will be loaded from NVS, and may be updated in NVS if changed.
+            Enable this option to only cache settings in RTC memory, avoiding all NVS operations.
+            Settings will persist through deep sleep, however all changes will be lost upon power loss
+            or reset.
+
+    config BO_WSC_LOCK_DISABLED
+        bool "Disable Lock"
+        depends on !BO_WSC_NVS_DISABLED
+        default n
+        help
+            By default, WSC will guard settings with a mutex to allow simultaneous access by other tasks in order to save to NVS.
+            This is safe to disable if care is taken to avoid bo_wsc_nvs_x functions while WiFi is active.
+
+    config BO_WSC_OPMODE_NO_NVS
+        bool "Disable \"opmode\" NVS Storage"
+        depends on !BO_WSC_NVS_DISABLED
+        default n
+        help
+            The WiFi driver frequently saves and retrieves "opmode" from NVS according to WiFi mode changes.
+            This adds time to initialisation and deinitialisation, increases flash writes, and is not
+            necessary if set via esp_wifi_set_mode.
+
+endmenu
